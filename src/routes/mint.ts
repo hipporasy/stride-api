@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/requireAuth';
 import { getValidToken, fetchActivity } from '../services/strava';
 import { isMinted, mintBadge } from '../services/contract';
+import { issueToken } from '../services/jwt';
 import { SessionUser } from '../types';
 
 const router = Router();
@@ -22,9 +23,13 @@ router.post('/', requireAuth, async (req, res) => {
   try {
     const { accessToken, updated } = await getValidToken(user);
     if (updated) {
-      await new Promise<void>((resolve, reject) => {
-        req.logIn(updated, err => (err ? reject(err) : resolve()));
-      });
+      if (req.bearerToken) {
+        res.setHeader('X-Refresh-Token', issueToken(updated));
+      } else {
+        await new Promise<void>((resolve, reject) => {
+          req.logIn(updated, err => (err ? reject(err) : resolve()));
+        });
+      }
     }
 
     const activity = await fetchActivity(accessToken, activityId);

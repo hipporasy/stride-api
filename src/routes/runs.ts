@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/requireAuth';
 import { getValidToken, fetchRecentRuns } from '../services/strava';
+import { issueToken } from '../services/jwt';
 import { SessionUser } from '../types';
 
 const router = Router();
@@ -11,9 +12,13 @@ router.get('/', requireAuth, async (req, res) => {
   try {
     const { accessToken, updated } = await getValidToken(user);
     if (updated) {
-      await new Promise<void>((resolve, reject) => {
-        req.logIn(updated, err => (err ? reject(err) : resolve()));
-      });
+      if (req.bearerToken) {
+        res.setHeader('X-Refresh-Token', issueToken(updated));
+      } else {
+        await new Promise<void>((resolve, reject) => {
+          req.logIn(updated, err => (err ? reject(err) : resolve()));
+        });
+      }
     }
 
     const runs = await fetchRecentRuns(accessToken);
