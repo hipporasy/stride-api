@@ -2,8 +2,6 @@ import { RequestHandler, Request, Response } from 'express';
 import { ZodSchema, z } from 'zod';
 import { SessionUser } from '@/types';
 
-// Builds the handler context from the builder's type params.
-// Each param contributes its field only when it's not null/false.
 type Ctx<
   TAuth extends boolean,
   TBody extends ZodSchema | null,

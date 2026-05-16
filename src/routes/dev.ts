@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { validateBody, asyncRoute } from '@/middleware/validate';
+import { route } from '@/middleware/route';
 import { isMinted, mintBadge } from '@/services/contract';
 import { recordMint } from '@/db/mints';
 import { AppError } from '@/middleware/errors';
@@ -16,10 +16,8 @@ const devMintSchema = z.object({
   runAt: z.number().int().default(() => Math.floor(Date.now() / 1000) - 3600),
 });
 
-// Only mounted in non-production — calls the contract directly, no Strava auth
-router.post('/mint', validateBody(devMintSchema), asyncRoute(async (req, res) => {
-  const { walletAddress, activityId, distance, movingTime, elevationGain, runAt } =
-    req.body as z.infer<typeof devMintSchema>;
+router.post('/mint', route().body(devMintSchema).handle(async ({ body }) => {
+  const { walletAddress, activityId, distance, movingTime, elevationGain, runAt } = body;
 
   const alreadyMinted = await isMinted(activityId);
   if (alreadyMinted) {
@@ -47,7 +45,7 @@ router.post('/mint', validateBody(devMintSchema), asyncRoute(async (req, res) =>
     contractAddress: process.env.CONTRACT_ADDRESS!,
   });
 
-  res.json({ txHash, tokenId });
+  return { txHash, tokenId };
 }));
 
 export default router;
