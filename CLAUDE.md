@@ -34,17 +34,31 @@ npm start            # node dist/index.js
 
 ```
 src/
-├── index.ts                  # Express app + server bootstrap
+├── index.ts                  # Express app + server bootstrap (runs DB migration on start)
+├── db/
+│   ├── pool.ts               # pg Pool singleton
+│   ├── redis.ts              # ioredis client + connect-redis adapter
+│   ├── migrate.ts            # Idempotent schema migration (CREATE TABLE IF NOT EXISTS)
+│   ├── users.ts              # User CRUD — upsertUser, getUser, updateTokens
+│   └── mints.ts              # recordMint — off-chain mint history
 ├── routes/
 │   ├── auth.ts               # GET /auth/strava, GET /auth/strava/callback
 │   ├── runs.ts               # GET /runs
-│   └── mint.ts               # POST /mint
+│   ├── mint.ts               # POST /mint
+│   └── dev.ts                # POST /dev/mint (non-production only)
 ├── services/
-│   ├── strava.ts             # Strava API client (token refresh included)
+│   ├── strava.ts             # Strava OAuth strategy, token refresh, API calls
 │   └── contract.ts           # viem walletClient + mint call
 └── middleware/
     └── requireAuth.ts        # Session guard for authenticated routes
 ```
+
+## Database Schema
+
+**`users`** — one row per Strava athlete; tokens stored here, not in the session cookie.
+**`mints`** — off-chain record of every successful mint (activity_id is unique).
+
+Sessions store only `stravaId`; `deserializeUser` fetches the full user (with tokens) from Postgres on each request. Token refresh writes updated tokens back to Postgres directly — no `req.logIn()` needed in routes.
 
 ## Core Mint Flow
 
@@ -77,6 +91,8 @@ RPC_URL=                 # Base Sepolia: https://sepolia.base.org
 CHAIN_ID=84532           # 84532 = Base Sepolia, 8453 = Base mainnet
 PORT=3001
 SESSION_SECRET=
+DATABASE_URL=postgresql://user:password@localhost:5432/stride
+REDIS_URL=redis://localhost:6379
 ```
 
 ## Key Constraints
