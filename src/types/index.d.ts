@@ -1,5 +1,7 @@
 export interface SessionUser {
-  stravaId: string;
+  userId: string;        // UUID — internal stable ID
+  refType: string;       // e.g. 'strava'
+  refId: string;         // provider-specific ID (e.g. Strava athlete ID)
   accessToken: string;
   refreshToken: string;
   tokenExpiresAt: number; // unix seconds
@@ -7,7 +9,7 @@ export interface SessionUser {
 
 declare global {
   namespace Express {
-    // eslint-disable-next-line @typescript-eslint/no-empty-interface
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     interface User extends SessionUser {}
   }
 }

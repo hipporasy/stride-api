@@ -11,7 +11,7 @@ router.get(
   '/strava/callback',
   passport.authenticate('strava', { failureRedirect: '/auth/strava' }),
   (req, res) => {
-    res.json({ ok: true, stravaId: req.user?.stravaId });
+    res.json({ ok: true, userId: req.user?.userId, refId: req.user?.refId });
   },
 );
 
